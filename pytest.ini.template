@@ -1,0 +1,20 @@
+# content of pytest.ini
+[pytest]
+markers =
+    integration: Test assumes existence of integrated env
+    long: Test is slow
+    current: Working on that atm
+log_cli = 1
+log_cli_level = INFO
+log_cli_format = %(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)
+log_cli_date_format=%Y-%m-%d %H:%M:%S
+env = 
+    D:BUCKET_ROLE_ARN=...
+    D:WORKDOCS_ROLE_ARN=...
+    D:BUCKET_URL=...
+    D:ORGANIZATION_ID=...
+    D:AWS_PROFILE=...
+    D:AWS_DEFAULT_REGION=...
+    D:WD_SIMPLE_USER=<Workdocs user with simple structure>
+    D:WD_COMPLEX_USER=<Workdocs user with complex structure>
+    D:KNOWN_PATH=<Path known to exist for WD_COMPLEX_USER>

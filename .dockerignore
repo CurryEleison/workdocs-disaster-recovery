@@ -1,0 +1,12 @@
+.git/
+.vscode/
+.pytest_cache/
+.gitignore
+.pylintrc
+pytest.ini
+pytest.ini.template
+tests/
+Dockerfile
+log.txt
+commands.txt
+__pycache__/
