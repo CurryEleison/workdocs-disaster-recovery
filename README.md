@@ -99,6 +99,8 @@ environment variables can be set:
 - `AWS_PROFILE`: Optinal profile to use
 - `RUN_STYLE`: "FULL" or "ACTIVITIES" to force a full or incremental backup. Optional.
 
+The image is built for `amd64` (Intel) and `arm64` (ARM) architectures.
+
 ### From command line
 
 #### Setup
