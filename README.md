@@ -98,6 +98,7 @@ environment variables can be set:
 - `BUCKET_ROLE_ARN`: ARN of role to assume when writing to S3 bucket. Optional if profile already allows this
 - `AWS_PROFILE`: Optinal profile to use
 - `RUN_STYLE`: "FULL" or "ACTIVITIES" to force a full or incremental backup. Optional.
+- `VERBOSE`: Optional. Any value will set loglevel to INFO instead of WARNING
 
 The image is built for `amd64` (Intel) and `arm64` (ARM) architectures.
 
@@ -158,7 +159,7 @@ Tasks and ideas:
 - [ ] Detect and warn if bucket and workdocs drive are in same account
 - [ ] Allow WorkDocs account to be in other region than default
 - [ ] Some tests that aren't just integration tests against a real env
-- [ ] Environment variable to control verbosity of output
+- [x] Environment variable to control verbosity of output
 - [x] Test if we are handling folder renaming correctly
 - [x] Create new incremental run based on `describe-activities`
 - [ ] Improve restores with "point-in-time" capability to use versions
@@ -166,9 +167,9 @@ Tasks and ideas:
 - [ ] Nice simplified report of restore runs
 - [x] Think about optimal amount of parallel threads
 - [x] Add chunked directory walking to parallel workloads
-- [x] Figure out way to update .folderinfo when new folders are present
--     - head .folderinfo for last mod date and compare against newest folder mod date
--     - We are here accepting that _deleting_ a folder won't update the .folderinfo
+- [x] Figure out way to update .folderinfo when new folders are present  
+      - HEAD .folderinfo for last mod date and compare against newest folder mod date  
+      - We are here accepting that _deleting_ a folder won't update the .folderinfo
 - [x] Start work on restore
 - [x] Implement --verbose flag and do logging to stdout/stderr
 - [x] Implement skipping of restore actions if file with same name/date/size already exists

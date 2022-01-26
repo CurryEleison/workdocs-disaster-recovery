@@ -52,7 +52,8 @@ def basesession_from_input(profile_name=None, region_name=None):
 
 
 def logging_setup(rootlogger, verbose: bool):
-    loglevel = logging.INFO if verbose else logging.WARN
+    isverbose = verbose or "VERBOSE" in environ
+    loglevel = logging.INFO if isverbose else logging.WARN
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(loglevel)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
