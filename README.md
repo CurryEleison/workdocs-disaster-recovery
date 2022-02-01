@@ -72,7 +72,8 @@ For reading and listing the documents to be backed up you need a policy like
             "Action": [
                 "workdocs:GetDocument*",
                 "workdocs:GetFolder*",
-                "workdocs:Describe*"
+                "workdocs:Describe*",
+                "workdocs:DownloadDocumentVersion"
             ],
             "Resource": [
                 "*"
