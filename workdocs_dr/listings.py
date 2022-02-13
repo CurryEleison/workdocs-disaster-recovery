@@ -236,7 +236,7 @@ class Listings:
         while True:
             response = client.list_objects_v2(**request)
             if "Delimiter" in request:
-                objects.extend(response["CommonPrefixes"])
+                objects.extend(response.get("CommonPrefixes", []))
             else:
                 if "Contents" in response:
                     objects.extend(response["Contents"])
