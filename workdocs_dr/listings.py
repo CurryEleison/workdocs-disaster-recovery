@@ -6,7 +6,7 @@ from workdocs_dr.aws_clients import AwsClients
 from workdocs_dr.document import DocumentHelper
 
 
-class WdFilter():
+class WdFilter:
     def __init__(self, userquery=None, foldernames=[], folderpattern=None) -> None:
         self.userquery = userquery
         self.foldernames = foldernames
@@ -17,10 +17,22 @@ class WdFilter():
         return self.userquery is None or self.userquery == username
 
 
-class WdDirectory():
-    actionable_activity_types = ["DOCUMENT_RENAMED", "DOCUMENT_VERSION_UPLOADED", "DOCUMENT_VERSION_DELETED", "DOCUMENT_RECYCLED",
-                                 "DOCUMENT_RESTORED", "DOCUMENT_REVERTED", "DOCUMENT_MOVED", "FOLDER_CREATED", "FOLDER_DELETED",
-                                 "FOLDER_RENAMED", "FOLDER_RECYCLED", "FOLDER_RESTORED", "FOLDER_MOVED"]
+class WdDirectory:
+    actionable_activity_types = [
+        "DOCUMENT_RENAMED",
+        "DOCUMENT_VERSION_UPLOADED",
+        "DOCUMENT_VERSION_DELETED",
+        "DOCUMENT_RECYCLED",
+        "DOCUMENT_RESTORED",
+        "DOCUMENT_REVERTED",
+        "DOCUMENT_MOVED",
+        "FOLDER_CREATED",
+        "FOLDER_DELETED",
+        "FOLDER_RENAMED",
+        "FOLDER_RECYCLED",
+        "FOLDER_RESTORED",
+        "FOLDER_MOVED",
+    ]
 
     def __init__(self, organization_id: str, clients: AwsClients) -> None:
         self.organization_id = organization_id
@@ -43,7 +55,9 @@ class WdDirectory():
             else:
                 break
 
-    def generate_activities(self, start_time, activity_types=actionable_activity_types, limit=None):
+    def generate_activities(
+        self, start_time, activity_types=actionable_activity_types, limit=None
+    ):
         request = {"OrganizationId": self.organization_id, "StartTime": start_time}
         if activity_types is not None:
             if isinstance(activity_types, str):
@@ -52,7 +66,8 @@ class WdDirectory():
                 request["ActivityTypes"] = ",".join(activity_types)
             else:
                 raise RuntimeWarning(
-                    "Activity types not of type being handled. Ignoring parameter and passing all acitivies")
+                    "Activity types not of type being handled. Ignoring parameter and passing all acitivies"
+                )
         # if limit is not None:
         #     request["Limit"] = limit
         client = self.clients.docs_client()
@@ -72,7 +87,7 @@ class WdDirectory():
                 break
 
 
-class WorkdocsFolderTree():
+class WorkdocsFolderTree:
     def __init__(self, clients: AwsClients, collect_folders=False) -> None:
         self.clients = clients
         self.collect_folders = collect_folders
@@ -101,7 +116,7 @@ class WorkdocsFolderTree():
                 break
 
 
-class S3FolderTree():
+class S3FolderTree:
     def __init__(self, clients: AwsClients, bucket, prefix) -> None:
         self.clients = clients
         self.bucket = bucket
@@ -110,7 +125,11 @@ class S3FolderTree():
 
     def isrootfolder(self, folderinfo):
         metadata = folderinfo.get("Metadata", None)
-        return metadata is not None and "CreatorId" in metadata and metadata["CreatorId"] == metadata["ParentFolderId"]
+        return (
+            metadata is not None
+            and "CreatorId" in metadata
+            and metadata["CreatorId"] == metadata["ParentFolderId"]
+        )
 
     def folderinfokey(self, folderid):
         return f"{self.prefix}/{folderid}/{DocumentHelper.FOLDERINFONAME}"
@@ -119,7 +138,9 @@ class S3FolderTree():
         client = self.clients.bucket_client()
         metadata = {}
         try:
-            response = client.head_object(Bucket=self.bucket, Key=self.folderinfokey(folderid))
+            response = client.head_object(
+                Bucket=self.bucket, Key=self.folderinfokey(folderid)
+            )
             metadata = DocumentHelper.folder_metadata_s32dict(response["Metadata"])
         except s3client.exceptions.NoSuchKey:  # type: ignore
             pass  # falling back on empty metadata
@@ -134,8 +155,12 @@ class S3FolderTree():
             return
         folderinfo = self.folderinfo(folderid)
         self.already_generated.add(folderid)
-        if "ParentFolderId" in folderinfo.get("Metadata", {}) and not self.isrootfolder(folderinfo):
-            yield from self.generate_folderinfos(folderinfo["Metadata"]["ParentFolderId"])
+        if "ParentFolderId" in folderinfo.get("Metadata", {}) and not self.isrootfolder(
+            folderinfo
+        ):
+            yield from self.generate_folderinfos(
+                folderinfo["Metadata"]["ParentFolderId"]
+            )
         yield folderinfo
 
     def generate_folders(self):
@@ -145,7 +170,7 @@ class S3FolderTree():
             yield from self.generate_folderinfos(fid)
 
 
-class Listings():
+class Listings:
     def __init__(self, clients: AwsClients) -> None:
         self.clients = clients
 
@@ -156,10 +181,12 @@ class Listings():
         client = self.clients.docs_client()
         while True:
             response = client.describe_folder_contents(**request)
-            documents.extend([
-                d for d in response["Documents"] if d["ResourceState"] == "ACTIVE"])
-            folders.extend([
-                d for d in response["Folders"] if d["ResourceState"] == "ACTIVE"])
+            documents.extend(
+                [d for d in response["Documents"] if d["ResourceState"] == "ACTIVE"]
+            )
+            folders.extend(
+                [d for d in response["Folders"] if d["ResourceState"] == "ACTIVE"]
+            )
             if "Marker" in response:
                 request["Marker"] = response["Marker"]
             else:
@@ -171,7 +198,9 @@ class Listings():
         client = self.clients.docs_client()
         while True:
             response = client.describe_folder_contents(**request)
-            documents.extend([d for d in response["Documents"] if d["ResourceState"] == "ACTIVE"])
+            documents.extend(
+                [d for d in response["Documents"] if d["ResourceState"] == "ACTIVE"]
+            )
             if "Marker" in response:
                 request["Marker"] = response["Marker"]
             else:
@@ -182,14 +211,20 @@ class Listings():
         return self.list_s3_objects(request)
 
     def list_s3_folders(self, bucket, prefix):
-        slashed_prefix = prefix if prefix.endswith("/") else prefix + "/"
+        slashed_prefix = (prefix if prefix.endswith("/") else prefix + "/").lstrip("/")
         request = {"Bucket": bucket, "Prefix": slashed_prefix, "Delimiter": "/"}
         return self.list_s3_objects(request)
 
     def list_s3_subfoldernames(self, bucket, prefix):
         s3_objects = self.list_s3_folders(bucket, prefix)
-        folderkeys = [o["Prefix"] for o in s3_objects if "Prefix" in o and o["Prefix"].endswith("/")]
-        return [Listings._extract_subfoldername(prefix.strip("/"), k) for k in folderkeys]
+        folderkeys = [
+            o["Prefix"]
+            for o in s3_objects
+            if "Prefix" in o and o["Prefix"].endswith("/")
+        ]
+        return [
+            Listings._extract_subfoldername(prefix.strip("/"), k) for k in folderkeys
+        ]
 
     @staticmethod
     def _extract_subfoldername(unslashed_prefix, key):
@@ -216,14 +251,18 @@ class WdItemApexOwner:
         self.clients = clients
         self.users = users
         self.result_map = result_map
-        self.root_folder_map = {u["RootFolderId"]: result_map[u["Id"]] for u in self.users}
+        self.root_folder_map = {
+            u["RootFolderId"]: result_map[u["Id"]] for u in self.users
+        }
 
     @lru_cache(maxsize=1024)
     def get_by_document_id(self, document_id: str):
         doc_request = {"DocumentId": document_id}
         doc_def = self.clients.docs_client().get_document(**doc_request)
         folder_id = doc_def.get("Metadata", {}).get("ParentFolderId", None)
-        return self.root_folder_map.get(folder_id, None) or self.get_by_folder_id(folder_id)
+        return self.root_folder_map.get(folder_id, None) or self.get_by_folder_id(
+            folder_id
+        )
 
     @lru_cache(maxsize=1024)
     def get_by_folder_id(self, folder_id: str):
@@ -237,5 +276,9 @@ class WdItemApexOwner:
             if parent_id in self.result_map:
                 return self.result_map[parent_id]
             else:
-                raise RuntimeError(f"Stuck on folder {folder_id} with parent {parent_id}")
-        return self.root_folder_map.get(parent_id, None) or self.get_by_folder_id(parent_id)
+                raise RuntimeError(
+                    f"Stuck on folder {folder_id} with parent {parent_id}"
+                )
+        return self.root_folder_map.get(parent_id, None) or self.get_by_folder_id(
+            parent_id
+        )

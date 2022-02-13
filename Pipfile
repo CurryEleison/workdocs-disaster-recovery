@@ -12,8 +12,8 @@ boto3 = "*"
 [dev-packages]
 pylint = "*"
 pytest = "*"
-autopep8 = "*"
 pytest-env = "*"
+black = "*"
 
 [requires]
 python_version = "3.9"
