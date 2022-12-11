@@ -14,7 +14,7 @@ jobs:
       - name: Branch information
         id: branchinfo
         run: |
-          echo "::set-output name=isdefault::$([[ ${GITHUB_REF##*/} == "${{ github.event.repository.default_branch }}" ]] && echo true || echo false)"
+          echo isdefault=$([[ ${GITHUB_REF##*/} == "${{ github.event.repository.default_branch }}" ]] && echo true || echo false) >> $GITHUB_OUTPUT
       - name: Set up QEMU to fetch amd64 and arm64
         id: qemu
         uses: docker/setup-qemu-action@v1
