@@ -8,6 +8,7 @@ deprecated = "*"
 requests = "*"
 pyyaml = "*"
 boto3 = "*"
+pathvalidate = "*"
 
 [dev-packages]
 pylint = "*"

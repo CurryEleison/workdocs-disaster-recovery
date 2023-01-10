@@ -40,9 +40,9 @@ class DirectoryBackupRunner:
 
         run_style = self.forced_runstyle or self.get_minder().get_best_run_style()
         logging.info(f"Starting Backup. Runstyle is {run_style}")
-        if run_style is RunStyle.ABORT:
+        if run_style == RunStyle.ABORT:
             return
-        if run_style is RunStyle.ACTIVITIES:
+        if run_style == RunStyle.ACTIVITIES:
             self._update_event_time(RunStyle.ACTIVITIES, RunEvent.START)
             # TODO: Implement user filters -- not at all trivial due to sharing, but we'll do it some day
             abr = ActivityBackupRunner(
@@ -68,7 +68,7 @@ class DirectoryBackupRunner:
 
     def _update_event_time(self, run_style: RunStyle, run_event: RunEvent) -> None:
         if self.filter is None or (
-            (self.filter.foldernames is None or len(self.filter.foldernames) == 0)
+            not self.filter.foldernames
             and self.filter.userquery is None
             and self.filter.folderpattern is None
         ):

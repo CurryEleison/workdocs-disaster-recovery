@@ -1,8 +1,9 @@
-
 import datetime
+from sys import stderr
 from os import utime
 from time import time
 from pathlib import Path
+from pathvalidate import ValidationError, validate_filename
 
 from workdocs_dr.document import DocumentHelper
 
@@ -23,17 +24,35 @@ def scribble_file(dirpath, mainrequest, writer, headrequest=None):
     response = headrequest() if headrequest is not None else mainrequest()
     metadata = DocumentHelper.document_metadata_s32dict(response["Metadata"])
     name = metadata["LatestVersionMetadata"]["Name"]
-    modified_timestamp = metadata["LatestVersionMetadata"]["ContentModifiedTimestamp"].timestamp()
+    modified_timestamp = metadata["LatestVersionMetadata"][
+        "ContentModifiedTimestamp"
+    ].timestamp()
+
+    try:
+        validate_filename(name)
+    except ValidationError as e:
+        print(f"{e}\n", file=stderr)
+
     documentpath = dirpath / name
     # If metadata in response indicate the file is already on disk we can return early
     if documentpath.exists():
         doc_stat = documentpath.stat()
-        if doc_stat.st_size == metadata["LatestVersionMetadata"]["Size"] \
-                and abs(doc_stat.st_mtime - modified_timestamp) < 2.0:
-            return {"Metadata": metadata, "Path": documentpath, "Action": "SkippedIdentical"}
+        if (
+            doc_stat.st_size == metadata["LatestVersionMetadata"]["Size"]
+            and abs(doc_stat.st_mtime - modified_timestamp) < 2.0
+        ):
+            return {
+                "Metadata": metadata,
+                "Path": documentpath,
+                "Action": "SkippedIdentical",
+            }
     # if mainrequest and headrequest are same we can skip the download, so can reuse the response
     # also, already did the download if there isn't a headrequest, so can reuse the response
-    bodyresponse = mainrequest() if headrequest is not None and mainrequest != headrequest else response
+    bodyresponse = (
+        mainrequest()
+        if headrequest is not None and mainrequest != headrequest
+        else response
+    )
     with open(documentpath, "wb") as f:
         writer(bodyresponse, f)
     utime(documentpath, (time(), modified_timestamp))

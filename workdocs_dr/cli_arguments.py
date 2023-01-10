@@ -10,7 +10,9 @@ from workdocs_dr.listings import WdFilter
 
 
 def wdfilter_from_input(userquery, foldersexpr) -> WdFilter:
-    folders = [f.strip() for f in foldersexpr.split(" ")] if foldersexpr is not None else []
+    folders = (
+        [f.strip() for f in foldersexpr.split(" ")] if foldersexpr is not None else []
+    )
     return WdFilter(userquery=userquery, foldernames=folders)
 
 
@@ -21,9 +23,10 @@ def organization_id_from_input(organization_id=None):
 def run_style_from_input(run_style=None) -> RunStyle:
     def normalize_str(s: str) -> str:
         return s.strip().lower() if s is not None else None
-    intended_style = run_style or environ.get("RUN_STYLE", None)
+
+    intended_style = run_style or environ.get("RUN_STYLE")
     all_styles = {normalize_str(rs.name): rs for rs in list(RunStyle)}
-    return all_styles.get(normalize_str(intended_style), None)
+    return all_styles.get(normalize_str(intended_style))
 
 
 def bucket_url_from_input(bucket_name=None, prefix=None) -> str:
@@ -34,7 +37,9 @@ def bucket_url_from_input(bucket_name=None, prefix=None) -> str:
     return f"s3://{bucket_name}"
 
 
-def clients_from_input(profile_name=None, region_name=None, workdocs_role_arn=None, bucket_role_arn=None) -> AwsClients:
+def clients_from_input(
+    profile_name=None, region_name=None, workdocs_role_arn=None, bucket_role_arn=None
+) -> AwsClients:
     session = basesession_from_input(profile_name, region_name)
     wd_role = workdocs_role_arn or environ.get("WORKDOCS_ROLE_ARN")
     s3_role = bucket_role_arn or environ.get("BUCKET_ROLE_ARN")
@@ -56,6 +61,8 @@ def logging_setup(rootlogger, verbose: bool):
     loglevel = logging.INFO if isverbose else logging.WARN
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(loglevel)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
     handler.setFormatter(formatter)
     rootlogger.addHandler(handler)

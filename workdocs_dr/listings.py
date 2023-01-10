@@ -260,9 +260,7 @@ class WdItemApexOwner:
         doc_request = {"DocumentId": document_id}
         doc_def = self.clients.docs_client().get_document(**doc_request)
         folder_id = doc_def.get("Metadata", {}).get("ParentFolderId", None)
-        return self.root_folder_map.get(folder_id, None) or self.get_by_folder_id(
-            folder_id
-        )
+        return self.root_folder_map.get(folder_id) or self.get_by_folder_id(folder_id)
 
     @lru_cache(maxsize=1024)
     def get_by_folder_id(self, folder_id: str):
@@ -279,6 +277,4 @@ class WdItemApexOwner:
                 raise RuntimeError(
                     f"Stuck on folder {folder_id} with parent {parent_id}"
                 )
-        return self.root_folder_map.get(parent_id, None) or self.get_by_folder_id(
-            parent_id
-        )
+        return self.root_folder_map.get(parent_id) or self.get_by_folder_id(parent_id)

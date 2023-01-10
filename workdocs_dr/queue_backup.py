@@ -1,4 +1,3 @@
-
 import logging
 import queue
 from workdocs_dr.aws_clients import AwsClients
@@ -8,10 +7,15 @@ from workdocs_dr.user import UserHelper, UserKeyHelper
 from workdocs_dr.workdocs_bucket_sync import WorkDocs2BucketSync
 
 
-class ListWorkdocsFolders():
+class ListWorkdocsFolders:
     worker_count = 4
 
-    def __init__(self, clients: AwsClients, downstream_queue: queue.LifoQueue = None, collect_folders=False) -> None:
+    def __init__(
+        self,
+        clients: AwsClients,
+        downstream_queue: queue.LifoQueue = None,
+        collect_folders=False,
+    ) -> None:
         self.clients = clients
         self.downstream_queue = downstream_queue
         self.collect_folders = collect_folders
@@ -39,15 +43,21 @@ class ListWorkdocsFolders():
             # Place self metadata + list of folders/documents on downstream queue, and place subfolders on tree walking queue
             contents = self.listings.list_wd_folder(folder_def["Id"])
             if self.downstream_queue is not None:
-                if len(contents.get("Folders", [])) > 0 or len(contents.get("Documents", [])) > 0:
-                    self.downstream_queue.put({"Metadata": folder_def, "Contents": contents})
+                if contents.get("Folders") or contents.get("Documents"):
+                    self.downstream_queue.put(
+                        {"Metadata": folder_def, "Contents": contents}
+                    )
             for subfolder_def in contents.get("Folders", []):
                 self.queue_walktree.put(subfolder_def)
             if self.collect_folders:
                 with lock:
                     self._add_to_folders(folder_def["Id"])
-        self.queue_helper = QueueWorkPool(task_queue=self.queue_walktree,
-                                          worker_count=self.worker_count, worker_action=task_work)
+
+        self.queue_helper = QueueWorkPool(
+            task_queue=self.queue_walktree,
+            worker_count=self.worker_count,
+            worker_action=task_work,
+        )
 
     def start_walk(self, rootfolderid):
         self._setup()
@@ -85,7 +95,14 @@ class ListWorkdocsFolders():
 class RecordSyncTasks:
     worker_count = 4
 
-    def __init__(self, clients: AwsClients, user: UserHelper, userkeys: UserKeyHelper, task_queue: queue.Queue, downstream_queue: queue.Queue = None) -> None:
+    def __init__(
+        self,
+        clients: AwsClients,
+        user: UserHelper,
+        userkeys: UserKeyHelper,
+        task_queue: queue.Queue,
+        downstream_queue: queue.Queue = None,
+    ) -> None:
         self.clients = clients
         self.listings = Listings(self.clients)
         self.user = user
@@ -107,17 +124,25 @@ class RecordSyncTasks:
 
         def task_work(folder_data, lock):
             fdef = folder_data["Metadata"]
-            actions = wd2bs.get_folder_syncactions(fdef, folder_data["Contents"].get(
-                "Folders", []), folder_data["Contents"].get("Documents", []))
+            actions = wd2bs.get_folder_syncactions(
+                fdef,
+                folder_data["Contents"].get("Folders", []),
+                folder_data["Contents"].get("Documents", []),
+            )
             if self.downstream_queue is not None:
                 for act in actions:
                     self.downstream_queue.put(act)
-            if len(actions) > 0:
+            if actions:
                 with lock:
-                    logging.info(f"Discovered {len(actions)} sync items in folder {fdef['Name']} / {fdef['Id']}")
+                    logging.info(
+                        f"Discovered {len(actions)} sync items in folder {fdef['Name']} / {fdef['Id']}"
+                    )
 
-        self.queue_helper = QueueWorkPool(task_queue=self.task_queue, worker_count=self.worker_count,
-                                          worker_action=task_work)
+        self.queue_helper = QueueWorkPool(
+            task_queue=self.task_queue,
+            worker_count=self.worker_count,
+            worker_action=task_work,
+        )
 
     def start_recording(self):
         self._setup()
@@ -127,7 +152,7 @@ class RecordSyncTasks:
         self.queue_helper.finish_tasks()
 
 
-class RunSyncTasks():
+class RunSyncTasks:
     worker_count = 6
 
     def __init__(self, task_queue: queue.Queue) -> None:
@@ -141,7 +166,10 @@ class RunSyncTasks():
             if result is not None:
                 with lock:
                     self.results.append(result)
-        self.queue_helper = QueueWorkPool(self.task_queue, self.worker_count, worker_action=task_work)
+
+        self.queue_helper = QueueWorkPool(
+            self.task_queue, self.worker_count, worker_action=task_work
+        )
 
     def start_syncing(self):
         self._setup()
